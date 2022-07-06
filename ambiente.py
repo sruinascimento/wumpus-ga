@@ -6,8 +6,7 @@ from random import sample
 class Ambiente:
 
     def __init__(self, dimensaoQuadrada: int):
-        self.matrizAmbiente: int = self.geraMatrizAmbiente(dimensaoQuadrada)
-        self.agente = Individuo()
+        self.matriz_ambiente: int = self.geraMatrizAmbiente(dimensaoQuadrada)
         self.tamanho_da_populacao = 20
         self.populacao = self.geraPopulacao()
         self.melhor_individuo = None
@@ -16,7 +15,11 @@ class Ambiente:
     def inicializa(self):
         self.movimentaPopulacao()
         self.calculaFitnessPopulacao(self.populacao)
-        print('Selecionados: ', self.selecionaIndividuos(self.populacao))
+        # print('Selecionados: ', self.selecionaIndividuos(self.populacao))
+        print("POPULACAO")
+        print(self.populacao)
+        print('\nMELHOR')
+        print(self.melhor_individuo)
 
     def geraMatrizAmbiente(self, dimensaoQuadrada: int) -> np.ndarray:
         agente = 1
@@ -62,11 +65,11 @@ class Ambiente:
 
         return [x, y]
 
-    def calculaFitnessPopulacao(self, populacao: list):
+    def calculaFitnessPopulacao(self, populacao: list) -> None:
         for agente in populacao:
             self.avaliaOAgente(agente)
 
-    def avaliaOAgente(self, agente: Individuo):
+    def avaliaOAgente(self, agente: Individuo) -> None:
         valor_fitness = 0
         for coordenadas in agente.cromossomo:
             x, y = coordenadas
@@ -75,9 +78,19 @@ class Ambiente:
             else:
                 valor_fitness += 1
         agente.fitness = valor_fitness
+        self.verificaMelhorIndividuo(agente)
+    
+    def verificaMelhorIndividuo(self, agente:Individuo) -> None:
+        if not self.melhor_individuo:
+            self.melhor_individuo = agente
+            return
 
-    def selecionaIndividuos(self, populacao:list):
-        total_selecionados = int(self.tamanho_da_populacao * self.recombinacao_de_cromossomo)
+        if self.melhor_individuo.fitness < agente.fitness:
+            self.melhor_individuo = agente.copia()
+            return        
+
+    def selecionaIndividuos(self, populacao:list) ->list:
+        total_selecionados = self.totalSelecionados()
         piscina = []
         for _ in range(total_selecionados):
             selecionados = sample(populacao, 3)
@@ -85,6 +98,10 @@ class Ambiente:
             piscina.append(selecionados[0])		
 	    
         return piscina
+
+    def totalSelecionados(self) -> int:
+        return int(self.tamanho_da_populacao * self.recombinacao_de_cromossomo)
+
 
     
 
