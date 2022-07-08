@@ -4,29 +4,30 @@ from random import sample
 
 class Ambiente:
 
-    def __init__(self, dimensaoQuadrada: int):
-        self.matriz_ambiente: int = self.geraMatrizAmbiente(dimensaoQuadrada)
-        self.tamanho_da_populacao = 10
+    def __init__(self, dimensao_quadrada: int):
+        self.dimensao_quadrada = dimensao_quadrada
+        self.matriz_ambiente: int = self.geraMatrizAmbiente(self.dimensao_quadrada)
+        self.tamanho_da_populacao = 50
         self.populacao = self.geraPopulacao()
         self.melhor_individuo = None
         self.recombinacao_de_cromossomo = 0.9
         self.taxa_de_mutacao = 0.02
+        self.geracao_de_parada = 100
 
     def inicializa(self):
         self.movimentaPopulacao()
         self.calculaFitnessPopulacao(self.populacao)
-        print('POP 0')
+        print('Populacao 0')
         print(self.populacao)
-        individuos_selecionados = self.selecionaIndividuos(self.populacao)
-        nova_populacao = self.reproduzIndividuos(individuos_selecionados)
-        # print('NOVA POPULACAO')
-        # print(nova_populacao)
-        # print('Selecionados: ', self.selecionaIndividuos(self.populacao))
-        # print("POPULACAO")
-        # print(self.populacao)
-        # print('\nMELHOR')
-        # print(self.melhor_individuo)
+        for i in range(self.geracao_de_parada):
+            print(f'Geração {i +1}')
+            nova_populacao = self.reproduz(self.populacao)
+            self.calculaFitnessPopulacao(nova_populacao)
+            print(nova_populacao)
 
+            print('\n\n\nMUDOU A GERACAO')
+            print(self.melhor_individuo)
+       
     def geraMatrizAmbiente(self, dimensaoQuadrada: int) -> np.ndarray:
         agente = 1
         ambiente = np.zeros(shape=(dimensaoQuadrada, dimensaoQuadrada))
@@ -80,13 +81,17 @@ class Ambiente:
             Alem de avaliar se o agente andou fora do tabuleiro, é necessário avaliar os passos 
             válidos. Se ele deu um passo por cada vez, e não se "teleportou".
         '''
+        punicao = -2
+        premiacao = 1
         valor_fitness = 0
         for coordenadas in agente.cromossomo:
             x, y = coordenadas
             if x < 0 or y < 0:
-                valor_fitness -= 2
+                valor_fitness += punicao
+            elif x >= self.dimensao_quadrada or y >= self.dimensao_quadrada :
+                valor_fitness += punicao
             else:
-                valor_fitness += 1
+                valor_fitness += premiacao
         agente.fitness = valor_fitness
         self.verificaMelhorIndividuo(agente)
     
@@ -131,17 +136,17 @@ class Ambiente:
         '''
         tamanho_cromossomo = len(pai.cromossomo)
         ponto_corte = np.random.randint(1, tamanho_cromossomo)
-        print('Ponto de corte', ponto_corte)
-        print('PAI', pai)
-        print('MAE', mae)
+        # print('Ponto de corte', ponto_corte)
+        # print('PAI', pai)
+        # print('MAE', mae)
         primeiro_filho = pai.cromossomo[0:ponto_corte] + mae.cromossomo[ponto_corte:]
         segundo_filho = mae.cromossomo[0:ponto_corte] + pai.cromossomo[ponto_corte:]
-        print('1f', primeiro_filho)
-        print('2f', segundo_filho)
+        # print('1f', primeiro_filho)
+        # print('2f', segundo_filho)
 
         return (Individuo(primeiro_filho), Individuo(segundo_filho))
 	
-    def mutaIndividuo(self, populacao:list):
+    def mutaIndividuo(self, populacao:list) -> None:
         '''
         Mutando os agentes
         '''
@@ -150,12 +155,12 @@ class Ambiente:
             if mutacao_atingida:
                 self.muta(agente)
 
-    def muta(self, agente:Individuo):
+    def muta(self, agente:Individuo) -> None:
         '''
         Bit string mutation 
         '''
-        print('Agente antes de ser mutado')
-        print(agente)
+        # print('Agente antes de ser mutado')
+        # print(agente)
         tamanho_cromossomo = len(agente.cromossomo)
         posicao_sorteada = np.random.randint(0, tamanho_cromossomo)
         incremento = np.random.random()
@@ -172,25 +177,17 @@ class Ambiente:
             else:
                 agente.cromossomo[posicao_sorteada][1] -= 1
 
-        print('Agente depois de ser mutado')
-        print(agente)
-
-    def reproducao(self):
+    def reproduz(self, populacao:list) -> list:
         '''
         realizar a reprodução completa
         '''
-        pass
+        populacao.sort(key=lambda agente: agente.fitness)
+        total_selecionados = self.totalSelecionados()
+        individuos_selecionados = self.selecionaIndividuos(populacao)
+        nova_populacao = self.reproduzIndividuos(individuos_selecionados)
+        self.mutaIndividuo(nova_populacao)
+        populacao_nova_geracao = nova_populacao + populacao[total_selecionados:]
 
-
-
-
-
-# def main():
-#     i1 = Individuo([[1, 2], [2, 2]])
-#     ag = Ambiente(4)
-#     ag.muta(i1)
-
-# if __name__ == "__main__":
-#     main()
-
+        return populacao_nova_geracao
+     
             
