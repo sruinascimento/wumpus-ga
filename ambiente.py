@@ -17,6 +17,7 @@ class Ambiente:
         self.recombinacao_de_cromossomo = 0.9
         self.taxa_de_mutacao = 0.02
         self.geracao_de_parada = 2
+        self.sensacoes = self.geraCoordenadaSensacoes()
        
     def inicializa(self):
         self.movimentaPopulacao()
@@ -122,6 +123,35 @@ class Ambiente:
 
         return [x, y]
 
+    def geraCoordenadaSensacoes(self):
+        sensacoes = {'brisa':  [], 'fedor':  [], 'brilho': []}
+        
+        for x in range(self.dimensao_quadrada):
+            for y in range(self.dimensao_quadrada):
+        
+                if self.matriz_ambiente[x][y] == 2:
+                    coordenadas = self.validaCoordenadasDasSensacoes(x, y)
+                    sensacoes['brisa'].extend(coordenadas)
+                
+                if self.matriz_ambiente[x][y] == 5:
+                    coordenadas = self.validaCoordenadasDasSensacoes(x, y)   
+                    sensacoes['fedor'].extend(coordenadas)
+
+                if self.matriz_ambiente[x][y] == 10:
+                    sensacoes['brilho'].append([x, y])
+        
+        return sensacoes
+
+    def validaCoordenadasDasSensacoes(self, x, y):
+        coordenadas_com_sensacao = [[x, y-1], [x, y+1], [x-1, y], [x+1, y]]
+        coordenadas_validas_sensacaoes = []
+        for coordenada in coordenadas_com_sensacao:
+            coordenada_valida = self.verificaCoordenadaValida(coordenada[0], coordenada[1],self.dimensao_quadrada )
+            if coordenada_valida:
+                coordenadas_validas_sensacaoes.append([coordenada[0], coordenada[1]])
+        
+        return coordenadas_validas_sensacaoes
+
     def calculaFitnessPopulacao(self, populacao: list) -> None:
         for agente in populacao:
             self.avaliaOAgente(agente)
@@ -137,12 +167,17 @@ class Ambiente:
         valor_fitness = 0
         for coordenadas in agente.cromossomo:
             x, y = coordenadas
-            if x < 0 or y < 0:
-                valor_fitness += punicao_fora_tabuleiro
-            elif x >= self.dimensao_quadrada or y >= self.dimensao_quadrada:
-                valor_fitness += punicao_fora_tabuleiro
-            else:
+            coordenada_valida = self.verificaCoordenadaValida(x, y, self.dimensao_quadrada)
+            if coordenada_valida:
                 valor_fitness += premiacao
+            else:
+                valor_fitness += punicao_fora_tabuleiro
+            # if x < 0 or y < 0:
+            #     valor_fitness += punicao_fora_tabuleiro
+            # elif x >= self.dimensao_quadrada or y >= self.dimensao_quadrada:
+            #     valor_fitness += punicao_fora_tabuleiro
+            # else:
+            #     valor_fitness += premiacao
 
         for i in range(len(agente.cromossomo) - 1):
             x, y = agente.cromossomo[i]
@@ -154,6 +189,14 @@ class Ambiente:
         agente.fitness = valor_fitness
 
         self.verificaMelhorIndividuo(agente)
+
+    def verificaCoordenadaValida(self, x, y, dimensao) -> bool:
+        if x < 0 or y < 0:
+            return False
+        if x >= dimensao or y >= dimensao:
+            return False
+        
+        return True
 
     def verificaMelhorIndividuo(self, agente: Individuo) -> None:
         if not self.melhor_individuo:
