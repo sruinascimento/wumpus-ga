@@ -12,14 +12,12 @@ class Ambiente:
         self.poco:int = 2
         self.sensacoes =  sensacoes = {'brisa':  [], 'fedor':  [], 'brilho': [], 'morte_poco': [], 'morte_wumpus': []}
         self.matriz_ambiente: int = self.geraMatrizAmbiente(self.dimensao_quadrada)
-        self.tamanho_da_populacao = 10
+        self.tamanho_da_populacao = 20
         self.populacao = self.geraPopulacao()
         self.melhor_individuo = None
         self.recombinacao_de_cromossomo = 0.9
         self.taxa_de_mutacao = 0.02
-        self.geracao_de_parada = 2
-        # self.sensacoes = self.geraCoordenadaSensacoes()
-       
+        self.geracao_de_parada = 10
        
     def inicializa(self):
         self.movimentaPopulacao()
@@ -169,8 +167,13 @@ class Ambiente:
         penalizacao_wumpus = -500
         valor_fitness += self.premiaPorAndarNoTabuleiro(agente.cromossomo)
         valor_fitness += self.penalizaPorTeleportar(agente.cromossomo)
-        valor_fitness += self.penalizaPorMorteDoAgente(agente.cromossomo, penalizacao_poco, 'morte_poco')
-        valor_fitness += self.penalizaPorMorteDoAgente(agente.cromossomo, penalizacao_wumpus, 'morte_wumpus')
+        personagem_vivo = self.verificaPersonagemVivoAteOuro(agente.cromossomo)
+        if personagem_vivo:
+            valor_fitness += self.premiaPorPegarOuroVivo(personagem_vivo)
+            agente.ouro = True
+
+        # valor_fitness += self.penalizaPorMorteDoAgente(agente.cromossomo, penalizacao_poco, 'morte_poco')
+        # valor_fitness += self.penalizaPorMorteDoAgente(agente.cromossomo, penalizacao_wumpus, 'morte_wumpus')
         agente.fitness = valor_fitness
 
         self.verificaMelhorIndividuo(agente)
@@ -213,7 +216,40 @@ class Ambiente:
         
         return fitness
 
-            
+    def verificaPersonagemVivoAteOuro(self, cromossomo:list) -> bool:
+        coordenada_ouro = self.sensacoes['brilho'][0]
+        try:
+            indice_ouro = cromossomo.index(coordenada_ouro)
+        except:
+            indice_ouro = -1
+        print('indice_ouro', indice_ouro)
+        if indice_ouro == -1:
+            return False
+        
+        for coordenada_poco in self.sensacoes['morte_poco']:
+            print('coordenada_pocos>>>', coordenada_poco)
+            passo_antes_do_ouro = cromossomo[0:indice_ouro]
+            print('Passos antes do Ouro ', passo_antes_do_ouro)
+            if coordenada_poco in passo_antes_do_ouro:
+                return False
+        
+        return True
+
+    def premiaPorPegarOuroVivo(self, personagem_vivo:bool):
+        premiacao_ouro = 1000
+        fitness = 0
+        if not personagem_vivo:
+            return fitness
+        fitness = premiacao_ouro
+        return fitness
+
+    # def premiaPorPegarOuro(self, cromossomo:list) -> int:
+    #     personagem_vivo = self.verificaPersonagemVivoAteOuro(cromossomo)
+    #     fitness = 0
+    #     fitness += self.premiaPorPegarOuroVivo(personagem_vivo)
+        
+    #     return fitness
+
 
     def verificaCoordenadaValida(self, x, y, dimensao) -> bool:
         if x < 0 or y < 0:
