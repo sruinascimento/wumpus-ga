@@ -10,6 +10,7 @@ class Ambiente:
         self.ouro:int = 10
         self.wumpus:int = 5
         self.poco:int = 2
+        self.sensacoes =  sensacoes = {'brisa':  [], 'fedor':  [], 'brilho': [], 'morte_poco': [], 'morte_wumpus': []}
         self.matriz_ambiente: int = self.geraMatrizAmbiente(self.dimensao_quadrada)
         self.tamanho_da_populacao = 10
         self.populacao = self.geraPopulacao()
@@ -17,7 +18,8 @@ class Ambiente:
         self.recombinacao_de_cromossomo = 0.9
         self.taxa_de_mutacao = 0.02
         self.geracao_de_parada = 2
-        self.sensacoes = self.geraCoordenadaSensacoes()
+        # self.sensacoes = self.geraCoordenadaSensacoes()
+       
        
     def inicializa(self):
         self.movimentaPopulacao()
@@ -41,6 +43,8 @@ class Ambiente:
         ambiente = self.geraCoordenadaOuro(ambiente)
         ambiente = self.geraCoordenadaWumpus(ambiente)
 
+        self.geraCoordenadaSensacoes(ambiente)
+
         return ambiente
 
     def geraCoordenadaPoco(self, matriz_ambiente):
@@ -53,6 +57,7 @@ class Ambiente:
                 lista_coordenadas.append([coordenada_x, coordenada_y])
         for coordenada in lista_coordenadas:
             x, y = coordenada
+            self.sensacoes['morte_poco'].append([x, y])
             matriz_ambiente[x][y] = self.poco
         
         return matriz_ambiente
@@ -82,6 +87,7 @@ class Ambiente:
                 break
             
             matriz_ambiente[coordenada_x][coordenada_y] = self.wumpus
+            self.sensacoes['morte_wumpus'].append([coordenada_x, coordenada_y])
             break
         return matriz_ambiente
 
@@ -123,24 +129,21 @@ class Ambiente:
 
         return [x, y]
 
-    def geraCoordenadaSensacoes(self):
-        sensacoes = {'brisa':  [], 'fedor':  [], 'brilho': []}
+    def geraCoordenadaSensacoes(self, matriz_ambiente:list) -> None:
         
         for x in range(self.dimensao_quadrada):
             for y in range(self.dimensao_quadrada):
         
-                if self.matriz_ambiente[x][y] == 2:
+                if matriz_ambiente[x][y] == 2:
                     coordenadas = self.validaCoordenadasDasSensacoes(x, y)
-                    sensacoes['brisa'].extend(coordenadas)
+                    self.sensacoes['brisa'].extend(coordenadas)
                 
-                if self.matriz_ambiente[x][y] == 5:
+                if matriz_ambiente[x][y] == 5:
                     coordenadas = self.validaCoordenadasDasSensacoes(x, y)   
-                    sensacoes['fedor'].extend(coordenadas)
+                    self.sensacoes['fedor'].extend(coordenadas)
 
-                if self.matriz_ambiente[x][y] == 10:
-                    sensacoes['brilho'].append([x, y])
-        
-        return sensacoes
+                if matriz_ambiente[x][y] == 10:
+                    self.sensacoes['brilho'].append([x, y])
 
     def validaCoordenadasDasSensacoes(self, x, y):
         coordenadas_com_sensacao = [[x, y-1], [x, y+1], [x-1, y], [x+1, y]]
@@ -154,41 +157,63 @@ class Ambiente:
 
     def calculaFitnessPopulacao(self, populacao: list) -> None:
         for agente in populacao:
-            self.avaliaOAgente(agente)
+            self.calculaFitnessDoAgente(agente)
 
-    def avaliaOAgente(self, agente: Individuo) -> None:
+    def calculaFitnessDoAgente(self, agente: Individuo) -> None:
         '''
             Alem de avaliar se o agente andou fora do tabuleiro, é necessário avaliar os passos
             válidos. Se ele deu um passo por cada vez, e não se "teleportou".
         '''
-        punicao_fora_tabuleiro = -2
-        punicao_teleporte = -1000
-        premiacao = 1
         valor_fitness = 0
-        for coordenadas in agente.cromossomo:
-            x, y = coordenadas
-            coordenada_valida = self.verificaCoordenadaValida(x, y, self.dimensao_quadrada)
-            if coordenada_valida:
-                valor_fitness += premiacao
-            else:
-                valor_fitness += punicao_fora_tabuleiro
-            # if x < 0 or y < 0:
-            #     valor_fitness += punicao_fora_tabuleiro
-            # elif x >= self.dimensao_quadrada or y >= self.dimensao_quadrada:
-            #     valor_fitness += punicao_fora_tabuleiro
-            # else:
-            #     valor_fitness += premiacao
-
-        for i in range(len(agente.cromossomo) - 1):
-            x, y = agente.cromossomo[i]
-            coordenadas_validas = [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]
-            proxima_coordenada = agente.cromossomo[i + 1]
-            if proxima_coordenada not in coordenadas_validas:
-                valor_fitness += punicao_teleporte
-
+        penalizacao_poco = -200
+        penalizacao_wumpus = -500
+        valor_fitness += self.premiaPorAndarNoTabuleiro(agente.cromossomo)
+        valor_fitness += self.penalizaPorTeleportar(agente.cromossomo)
+        valor_fitness += self.penalizaPorMorteDoAgente(agente.cromossomo, penalizacao_poco, 'morte_poco')
+        valor_fitness += self.penalizaPorMorteDoAgente(agente.cromossomo, penalizacao_wumpus, 'morte_wumpus')
         agente.fitness = valor_fitness
 
         self.verificaMelhorIndividuo(agente)
+
+    def premiaPorAndarNoTabuleiro(self, cromossomo:list) -> int:
+        punicao_fora_tabuleiro = -2
+        premiacao = 1
+        fitness = 0
+        for coordenadas in cromossomo:
+            x, y = coordenadas
+            coordenada_valida = self.verificaCoordenadaValida(x, y, self.dimensao_quadrada)
+            if coordenada_valida:
+                fitness += premiacao
+            else:
+                fitness += punicao_fora_tabuleiro
+
+        return fitness
+
+    def penalizaPorTeleportar(self, cromossomo:list) -> int:
+        fitness = 0
+        punicao_teleporte = -1000
+
+        for i in range(len(cromossomo) - 1):
+            x, y = cromossomo[i]
+            coordenadas_validas = [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]
+            proxima_coordenada = cromossomo[i + 1]
+            if proxima_coordenada not in coordenadas_validas:
+                fitness += punicao_teleporte
+
+        return fitness
+
+    def penalizaPorMorteDoAgente(self, cromossomo:list, penalizacao:int, chave_sensacao:str) -> int:
+        penalizacao_morte = penalizacao
+        fitness = 0
+        coordenada_poco = self.sensacoes[chave_sensacao]
+        for coordenada in coordenada_poco:
+            if coordenada in cromossomo:
+                fitness += penalizacao_morte
+                break
+        
+        return fitness
+
+            
 
     def verificaCoordenadaValida(self, x, y, dimensao) -> bool:
         if x < 0 or y < 0:
@@ -292,5 +317,3 @@ class Ambiente:
         populacao_nova_geracao = nova_populacao + populacao[total_selecionados:]
 
         return populacao_nova_geracao
-
-
