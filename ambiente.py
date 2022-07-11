@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 class Ambiente:
 
-    def __init__(self, dimensao_quadrada: int):
+    def __init__(self, dimensao_quadrada: int = 4, tamanho_da_populacao:int = 20, geracao_de_parada:int = 10):
         '''
             @params
             dimensao_quadrada : dimensão da matriz do ambiente
@@ -29,12 +29,12 @@ class Ambiente:
         self.poco:int = 2
         self.sensacoes =  {'brisa':  [], 'fedor':  [], 'brilho': [], 'morte_poco': [], 'morte_wumpus': []}
         self.matriz_ambiente: int = self.geraMatrizAmbiente(self.dimensao_quadrada)
-        self.tamanho_da_populacao = 20
+        self.tamanho_da_populacao = tamanho_da_populacao
         self.populacao = self.geraPopulacao()
         self.melhor_individuo = None
         self.recombinacao_de_cromossomo = 0.9
         self.taxa_de_mutacao = 0.02
-        self.geracao_de_parada = 10
+        self.geracao_de_parada = geracao_de_parada
         self.todos_fitness = []
        
     def inicializa(self):
