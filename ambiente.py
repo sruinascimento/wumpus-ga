@@ -6,11 +6,27 @@ from random import sample, randint
 class Ambiente:
 
     def __init__(self, dimensao_quadrada: int):
+        '''
+            @params
+            dimensao_quadrada : dimensão da matriz do ambiente
+            ouro: número 10 para representar o ouro
+            wumpus: número 5 para representar o wumpus
+            poco: número 2 para representar o poço
+            sensacoes: dicionário com as coordenadas das senções de brisa, brilho, fedor, morte pelo wumpus, morte pelo poço
+            matriz_ambiente: matriz ambiente preenchida com os valores referente ao agente, poços, wumpus e o ouro
+            tamanho_da_populacao: número referente ao total de indivíduos
+            populacao: um lista de individuos(agentes) que representam a geração 0
+            melhor_individuo: representa a melhor solução encontrada dentre todas gerações
+            recombinacao_de_cromossomo: representa o percentual que usaremos para seleção e reprodução dos indivíduos
+            taxa_de_mutacao: percentual para que haja variabilização genética
+            geracao_de_parada: quantas gerações haverá para nosso AG
+            todos_fitness: é um lista com todos os fitness de todas gerações
+        '''
         self.dimensao_quadrada = dimensao_quadrada
         self.ouro:int = 10
         self.wumpus:int = 5
         self.poco:int = 2
-        self.sensacoes =  sensacoes = {'brisa':  [], 'fedor':  [], 'brilho': [], 'morte_poco': [], 'morte_wumpus': []}
+        self.sensacoes =  {'brisa':  [], 'fedor':  [], 'brilho': [], 'morte_poco': [], 'morte_wumpus': []}
         self.matriz_ambiente: int = self.geraMatrizAmbiente(self.dimensao_quadrada)
         self.tamanho_da_populacao = 20
         self.populacao = self.geraPopulacao()
@@ -18,22 +34,42 @@ class Ambiente:
         self.recombinacao_de_cromossomo = 0.9
         self.taxa_de_mutacao = 0.02
         self.geracao_de_parada = 10
+        self.todos_fitness = []
        
     def inicializa(self):
+        '''
+            Principal método, esse método que é invocado para poder iniciar todo o processo.
+            Primeira etapa será chamar a função movimentaPopulacao(), isso acarretará em dar passos aleatórios com as possibilidade
+            N(norte), S(sul), L(leste) e O(oeste). A partir disso será invocado o método calculaFitnessPopulacao() para 
+            avaliar os individuos da primeira geração.
+            Posteriormente teremos um laço para iterar de acordo com a quantidade de gerações configuradas.
+            Sempre realizando o processo de reprodução e avaliação da população.
+            Ao final do processo, será apresentado a melhor solução encontrada.
+        '''
         self.movimentaPopulacao()
         self.calculaFitnessPopulacao(self.populacao)
-        print('Populacao 0')
-        print(self.populacao)
+
         for i in range(self.geracao_de_parada):
-            print(f'Geração {i + 1}')
             nova_populacao = self.reproduz(self.populacao)
             self.calculaFitnessPopulacao(nova_populacao)
-            print(nova_populacao)
 
-            print('\n\n\nMUDOU A GERACAO')
-            print(self.melhor_individuo)
+        print('Melhor Individuo ', self.melhor_individuo)
 
     def geraMatrizAmbiente(self, dimensaoQuadrada: int) -> np.ndarray:
+        '''
+            A função geraMatrizAmbiente() gera as coordenadas do Agente representado pelo número 1, 
+            poços representados pelo número 2, wumpus representado pelo número 5, e por fim, o ouro representado
+            pelo número 10.
+            As regras são:
+             Ambiente 4X4
+             Poços: 3
+             Ouro: 1
+             Wumpus: 1
+            
+            Somente o agente pode estar na posição 0x0.
+            O Wumpus não pode estar dentro de uma coordenada que tenha um poço.
+            O Wumpus pode estar na coordenada do ouro.
+        '''
         agente = 1
         ambiente = np.zeros(shape=(dimensaoQuadrada, dimensaoQuadrada))
         ambiente[0][0] = agente
@@ -46,6 +82,9 @@ class Ambiente:
         return ambiente
 
     def geraCoordenadaPoco(self, matriz_ambiente):
+        '''
+            Função que gera as coordenadas do poço
+        '''
         lista_coordenadas = []
         while (len(lista_coordenadas) < self.dimensao_quadrada - 1):
             coordenada_x, coordenada_y = randint(0, 3), randint(0, 3)
@@ -61,6 +100,9 @@ class Ambiente:
         return matriz_ambiente
 
     def geraCoordenadaOuro(self, matriz_ambiente):
+        '''
+            Função que gera as coordenadas do ouro
+        '''
         while (True):
             coordenada_x, coordenada_y = randint(0, 3), randint(0, 3)
             if coordenada_x == 0 and coordenada_y == 0:
@@ -73,6 +115,9 @@ class Ambiente:
         return matriz_ambiente
     
     def geraCoordenadaWumpus(self, matriz_ambiente):
+        '''
+            Função que gera a coordenada do wumpus
+        '''
         while (True):
             coordenada_x, coordenada_y = randint(0, 3), randint(0, 3)
             if coordenada_x == 0 and coordenada_y == 0:
@@ -90,15 +135,24 @@ class Ambiente:
         return matriz_ambiente
 
     def geraPopulacao(self) -> list:
+        '''
+            Inicializa a geração 0 com instancia dos individuos, nossos agentes.
+        '''
         populacao = [Individuo() for i in range(self.tamanho_da_populacao)]
         return populacao
 
     def movimentaPopulacao(self) -> None:
+        '''
+            Etapa para realizar a movimentação da populção 0.
+        '''
         for _ in range(19):
             for agente in self.populacao:
                 self.movimentaAgente(agente)
 
     def movimentaAgente(self, agente: Individuo) -> None:
+        '''
+            Função que realiza movimentos aleatórios sorteando N, S L e O.
+        '''
         listaMovimentos = ['N', 'S', 'L', 'O']
         movimentoAleatorio = np.random.choice(listaMovimentos)
         coordenada_atual = agente.cromossomo[-1]
@@ -107,6 +161,23 @@ class Ambiente:
         agente.cromossomo.append(coordenada_atualizada)
 
     def atualizaCoordenadaDoAgente(self, movimento: str, coordenada_atual) -> list:
+
+        '''
+            Regras:
+            Se a posição N(norte) for sorteada, a coordenada x, que representa a linha
+            será decrementada de 1 unidade.
+            
+            Se a posição S(sul) for sorteada, a coordenada x, que representa a linha será
+            incrementada em 1 unidade
+
+            Se a posição L(leste) for sorteada, a coordenada y, que representa a coluna será
+            incrementada em 1 unidade
+
+            Se a posição O(Oeste) for sorteada, a coordenada y, que representa a coluna será
+            decrementada em 1 unidade
+
+        '''
+
         NORTE = 'N'
         SUL = 'S'
         LESTE = 'L'
@@ -129,6 +200,12 @@ class Ambiente:
 
     def geraCoordenadaSensacoes(self, matriz_ambiente:list) -> None:
         
+        '''
+            Função que gera um dicionário com todas as coordenadas com as senções de brisa, 
+            odor e brilho. Ou seja, são as coordenadas adjacentes que contém as informações de sensações
+        '''
+
+
         for x in range(self.dimensao_quadrada):
             for y in range(self.dimensao_quadrada):
         
@@ -144,6 +221,11 @@ class Ambiente:
                     self.sensacoes['brilho'].append([x, y])
 
     def validaCoordenadasDasSensacoes(self, x, y):
+
+        '''
+            Função que valida as sensações somente em coordenadas dentro tabuleiro.
+        '''
+
         coordenadas_com_sensacao = [[x, y-1], [x, y+1], [x-1, y], [x+1, y]]
         coordenadas_validas_sensacaoes = []
         for coordenada in coordenadas_com_sensacao:
@@ -154,29 +236,55 @@ class Ambiente:
         return coordenadas_validas_sensacaoes
 
     def calculaFitnessPopulacao(self, populacao: list) -> None:
+        '''
+            Função que itera todos agentes da população para calcular o fitness de cada.
+        '''
+        todos_fitness_populacao = []
         for agente in populacao:
             self.calculaFitnessDoAgente(agente)
+            todos_fitness_populacao.append(agente.fitness)
+
+        self.todos_fitness.append(todos_fitness_populacao)
 
     def calculaFitnessDoAgente(self, agente: Individuo) -> None:
         '''
-            Alem de avaliar se o agente andou fora do tabuleiro, é necessário avaliar os passos
-            válidos. Se ele deu um passo por cada vez, e não se "teleportou".
+           Cálculo do fitness com base nos nossos critérios:
+           Valores: 
+           -200 é a penalidade no fitness para o agente que caiu no poço
+           -500 é a penalidade no fitness para o agente que morreu para o wumpus
+
+           Há outros valores para penalidade dentro das funções.
+
+           A função fitness é dividida em etapas.
+           A primeira etapa é verificar se o agente pegou o ouro sem morrer.
+           Caso seja verdade, o fitnesse receberá 1000 pontos por atingir o objetivo.
+           Posteriormente, será verificado se ele andou dentro ou fora do tabuleiro. Por fim,
+           O agente será avaliado se ele teleportou no mapa, ou seja, deu um passo maior do que 
+           uma coordenada. Caso o individuo teleportou, ele será penalizado.
         '''
         valor_fitness = 0
         penalizacao_poco = -200
         penalizacao_wumpus = -500
-        valor_fitness += self.premiaPorAndarNoTabuleiro(agente.cromossomo)
-        valor_fitness += self.penalizaPorTeleportar(agente.cromossomo)
-        personagem_vivo = self.verificaPersonagemVivoAteOuro(agente.cromossomo)
+        personagem_vivo = self.verificaPersonagemVivoAteOuro(agente)
         if personagem_vivo:
             valor_fitness += self.premiaPorPegarOuroVivo(personagem_vivo)
+            valor_fitness += self.premiaPorAndarNoTabuleiro(agente.passo_ate_ouro)  
+            valor_fitness += self.penalizaPorTeleportar(agente.cromossomo)
             agente.ouro = True
-
-        # valor_fitness += self.penalizaPorMorteDoAgente(agente.cromossomo, penalizacao_poco, 'morte_poco')
-        # valor_fitness += self.penalizaPorMorteDoAgente(agente.cromossomo, penalizacao_wumpus, 'morte_wumpus')
+        else:
+            valor_fitness += self.premiaPorAndarNoTabuleiro(agente.cromossomo) 
+            valor_fitness += self.penalizaPorTeleportar(agente.cromossomo)
+            valor_fitness += self.penalizaPorMorteDoAgente(agente.cromossomo, penalizacao_poco, 'morte_poco')
+            valor_fitness += self.penalizaPorMorteDoAgente(agente.cromossomo, penalizacao_wumpus, 'morte_wumpus')
+            
         agente.fitness = valor_fitness
 
         self.verificaMelhorIndividuo(agente)
+
+    def melhorFitnessPorGeracao(self):
+        melhores_fitness_ordenados = [sorted(fitness, reverse=True) for fitness in self.todos_fitness]
+        melhores_fitness_ordenados = [[fitness[0], fitness[1], fitness[2]] for fitness in melhores_fitness_ordenados]
+        return melhores_fitness_ordenados
 
     def premiaPorAndarNoTabuleiro(self, cromossomo:list) -> int:
         punicao_fora_tabuleiro = -2
@@ -216,23 +324,28 @@ class Ambiente:
         
         return fitness
 
-    def verificaPersonagemVivoAteOuro(self, cromossomo:list) -> bool:
+    def verificaPersonagemVivoAteOuro(self, agente:Individuo) -> bool:
+        '''
+            Função que retorna um valor booleano, caso a agente não tenha morrido até encontrar 
+            o ouro.
+        '''
+
         coordenada_ouro = self.sensacoes['brilho'][0]
         try:
-            indice_ouro = cromossomo.index(coordenada_ouro)
+            indice_ouro = agente.cromossomo.index(coordenada_ouro)
         except:
             indice_ouro = -1
-        print('indice_ouro', indice_ouro)
+
         if indice_ouro == -1:
             return False
-        
-        for coordenada_poco in self.sensacoes['morte_poco']:
-            print('coordenada_pocos>>>', coordenada_poco)
-            passo_antes_do_ouro = cromossomo[0:indice_ouro]
-            print('Passos antes do Ouro ', passo_antes_do_ouro)
-            if coordenada_poco in passo_antes_do_ouro:
+        coordenadas_morte = self.sensacoes['morte_poco'] + self.sensacoes['morte_wumpus']
+     
+        for poco_e_wumpus in coordenadas_morte:
+            passo_antes_do_ouro = agente.cromossomo[0:indice_ouro]
+            if poco_e_wumpus in passo_antes_do_ouro:
                 return False
         
+        agente.passo_ate_ouro = agente.cromossomo[0:indice_ouro+1]
         return True
 
     def premiaPorPegarOuroVivo(self, personagem_vivo:bool):
@@ -243,14 +356,6 @@ class Ambiente:
         fitness = premiacao_ouro
         return fitness
 
-    # def premiaPorPegarOuro(self, cromossomo:list) -> int:
-    #     personagem_vivo = self.verificaPersonagemVivoAteOuro(cromossomo)
-    #     fitness = 0
-    #     fitness += self.premiaPorPegarOuroVivo(personagem_vivo)
-        
-    #     return fitness
-
-
     def verificaCoordenadaValida(self, x, y, dimensao) -> bool:
         if x < 0 or y < 0:
             return False
@@ -260,6 +365,9 @@ class Ambiente:
         return True
 
     def verificaMelhorIndividuo(self, agente: Individuo) -> None:
+        '''
+            Verifica qual é a melhor solução de todas
+        '''
         if not self.melhor_individuo:
             self.melhor_individuo = agente
             return
@@ -270,7 +378,9 @@ class Ambiente:
 
     def selecionaIndividuos(self, populacao: list) -> list:
         '''
-        Seleção pelo método de Torneio
+            Seleção de indivíduos pelo método torneio.
+            É seleciondo 90% da população. Serão escolhidos 3 agentes, ordenados e sempre será 
+            escolhido o agente pelo melhor fitness
         '''
         total_selecionados = self.totalSelecionados()
         piscina = []
@@ -282,9 +392,16 @@ class Ambiente:
         return piscina
 
     def totalSelecionados(self) -> int:
+        '''
+            Retorna um valor inteiro que será usado para seleção, reprodução e mutação.
+        '''
         return int(self.tamanho_da_populacao * self.recombinacao_de_cromossomo)
 
     def reproduzIndividuos(self, populacao_selecionada: list) -> list:
+        '''
+            Método de repodução seleciona um pai e uma mãe ao acaso. E a cadas dois pais selecionados,
+            serão gerados dois novos filhos
+        '''
         total_selecionados = self.totalSelecionados()
         novos_filhos = []
         for _ in range(total_selecionados):
@@ -296,23 +413,20 @@ class Ambiente:
 
     def geraFilho(self, pai, mae) -> tuple:
         '''
-        Reprodução com 1 ponto de corte
+            Reprodução com 1 ponto de corte. Um ponto será sorteado. E esse será o ponto para gera 
+            dois filhos
         '''
         tamanho_cromossomo = len(pai.cromossomo)
         ponto_corte = np.random.randint(1, tamanho_cromossomo)
-        # print('Ponto de corte', ponto_corte)
-        # print('PAI', pai)
-        # print('MAE', mae)
         primeiro_filho = pai.cromossomo[0:ponto_corte] + mae.cromossomo[ponto_corte:]
         segundo_filho = mae.cromossomo[0:ponto_corte] + pai.cromossomo[ponto_corte:]
-        # print('1f', primeiro_filho)
-        # print('2f', segundo_filho)
 
         return (Individuo(primeiro_filho), Individuo(segundo_filho))
 
     def mutaIndividuo(self, populacao: list) -> None:
         '''
-        Mutando os agentes
+        Mutando os agentes, para que haja a variabilidade genética. O percentual de mutação
+        varia entre 2% e 5%, para que um individuo não se modifique muito.
         '''
         for agente in populacao:
             mutacao_atingida = np.random.random() <= self.taxa_de_mutacao
@@ -321,15 +435,15 @@ class Ambiente:
 
     def muta(self, agente: Individuo) -> None:
         '''
-        Bit string mutation
+            A mutação para as coordenadas, deverá sortear um número aleatório para verificar se 
+            a coordenada x ou y será modificada. E por fim será sorteado outro número aleatório, para
+            definir se a coordenada x ou y, será incrementada ou decrementada.
         '''
-        # print('Agente antes de ser mutado')
-        # print(agente)
+       
         tamanho_cromossomo = len(agente.cromossomo)
         posicao_sorteada = np.random.randint(0, tamanho_cromossomo)
         incremento = np.random.random()
         posicao_x = np.random.random() <= 0.5
-        # refatorar para uma função
         if posicao_x:
             if incremento > 0.5:
                 agente.cromossomo[posicao_sorteada][0] += 1
@@ -343,7 +457,12 @@ class Ambiente:
 
     def reproduz(self, populacao: list) -> list:
         '''
-        realizar a reprodução completa
+        Processo completo de reprodução:
+        1º ordenação dos individuos
+        2º seleção de individuos
+        3º reprodução dos individuos a partir dos agentes selecionados
+        4º mutação dos individuos
+        5º nova geração contem 10% da população anterior.
         '''
         populacao.sort(key=lambda agente: agente.fitness)
         total_selecionados = self.totalSelecionados()
