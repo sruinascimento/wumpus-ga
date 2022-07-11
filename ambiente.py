@@ -282,6 +282,9 @@ class Ambiente:
         self.verificaMelhorIndividuo(agente)
 
     def melhorFitnessPorGeracao(self):
+        '''
+            Função que armazena os três melhores fitness de cada geração.
+        '''
         melhores_fitness_ordenados = [sorted(fitness, reverse=True) for fitness in self.todos_fitness]
         melhores_fitness_ordenados = [[fitness[0], fitness[1], fitness[2]] for fitness in melhores_fitness_ordenados]
         return melhores_fitness_ordenados
