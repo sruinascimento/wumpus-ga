@@ -10,7 +10,7 @@
 
 ## Parâmetros para passar para a instância Ambiente:
 
-ag = Ambiente(dimensao=4, tamanho_populacao=20, geracao_parada=10)
+####  ag = Ambiente(dimensao=4, tamanho_populacao=20, geracao_parada=10)
 
 > dimensao: tipo inteiro, o problema está atrelado com a matriz 4x4. 
 
