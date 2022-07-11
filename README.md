@@ -18,5 +18,5 @@
 
 > geracao_parada: do tipo inteiro, representa quantas geracoes teremos. Por padrão está com o valor 10.
 
-> Basta somente executar o script main.py
+> Basta somente executar o script main.py 
 
