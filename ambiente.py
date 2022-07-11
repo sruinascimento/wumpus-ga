@@ -485,6 +485,7 @@ class Ambiente:
         array: (ndarray) array com os 3 melhores fitness por geração.
         x, y: dimensões para criação do gráfico.
         '''   
+        array = np.array(array)
         plt.figure(figsize=(x,y))
         x = np.arange(array.shape[0]) 
         width = 0.30
