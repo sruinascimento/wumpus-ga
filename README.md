@@ -1,6 +1,6 @@
 # Wumpus Algoritmo Genético
 
-> Para rodar o script:
+## **Para rodar o script:**
 
 > execute o arquivo main.py
 
