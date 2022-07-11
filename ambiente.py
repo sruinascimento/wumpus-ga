@@ -1,6 +1,7 @@
 from individuo import Individuo
 import numpy as np
 from random import sample, randint
+import matplotlib.pyplot as plt
 
 
 class Ambiente:
@@ -475,3 +476,26 @@ class Ambiente:
         populacao_nova_geracao = nova_populacao + populacao[total_selecionados:]
 
         return populacao_nova_geracao
+    
+    def graficoMelhorFitness(self, array,x=16,y=7):
+        '''
+        Função responsavel por gerar o gráfico dos 3 melhores fitness de
+        de cada geração.
+        Args:
+        array: (ndarray) array com os 3 melhores fitness por geração.
+        x, y: dimensões para criação do gráfico.
+        '''   
+        plt.figure(figsize=(x,y))
+        x = np.arange(array.shape[0]) 
+        width = 0.30
+        y = np.arange(0,1080,40)
+        plt.bar(x, array[:,0], width) 
+        plt.bar(x+0.3, array[:,1], width)
+        plt.bar(x+0.6, array[:,2], width)
+        plt.xticks(x+0.3, ['Geração 0', 'Geração 1', 'Geração 2', 'Geração 3', 'Geração 4', 'Geração 5', 'Geração 6', 'Geração 7', 'Geração 8', 'Geração 9', 'Geração 10']) 
+        plt.yticks(y)
+        plt.ylabel("Valor do Fitness") 
+        plt.title('OS TRÊS MELHORES FITNESS DE ONZE GERAÇÕES', fontsize=14, weight='bold')
+        plt.legend(["1º Lugar", "2º Lugar", "3º Lugar"], title='Top 3 Fitness')
+        plt.grid()
+        plt.show()
