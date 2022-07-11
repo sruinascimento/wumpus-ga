@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 class Ambiente:
 
-    def __init__(self, dimensao_quadrada: int = 4, tamanho_da_populacao:int = 20, geracao_de_parada:int = 10):
+    def __init__(self, dimensao_quadrada: int = 4, tamanho_da_populacao:int = 20, geracao_de_parada:int = 10):  
         '''
             @params
             dimensao_quadrada : dimensão da matriz do ambiente
@@ -316,7 +316,7 @@ class Ambiente:
                 fitness += punicao_teleporte
 
         return fitness
-
+    
     def penalizaPorMorteDoAgente(self, cromossomo:list, penalizacao:int, chave_sensacao:str) -> int:
         penalizacao_morte = penalizacao
         fitness = 0
